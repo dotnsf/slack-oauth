@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<title>いらすと</title>
+<script type="text/javascript" src="//code.jquery.com/jquery-2.2.4.min.js"></script>
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet"/>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+<link href="//use.fontawesome.com/releases/v5.8.1/css/all.css" rel="stylesheet"/>
+<script src="./cvi_busy_lib.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+
+<style type="text/css">
+html, body{
+  text-align: center;
+  background-color: #fafafa;
+  font-size: 20px;
+  color: #333;
+}
+#mycanvas{
+  border: 1px solid #333;
+}
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-light bg-light">
+  <ul class="navbar-nav mr-auto" id="navbar">
+<%
+if( oauth == null ){
+%>
+  <li class="nav-item"><a class="nav-link" href="#" onClick="login()"><i class="fas fa-sign-in-alt"></i>Login</a></li>
+<%
+}
+%>
+  </ul>
+</nav>
+
+<div>
+  <ul id="channel_ids">
+  </ul>
+</div>
+
+<script>
+var base_url = location.origin + '/';
+console.log( base_url );
+var userId = null;
+
+$(function(){
+<%
+if( oauth != null ){
+%>
+  //. ログインしている
+  initChannelIds();
+<%
+}else{
+%>
+  //. ログインしていない
+<%
+}
+%>
+
+  init();
+});
+
+function login(){
+  //window.location.href = '/login';
+  window.location.href = '/slack/login';
+}
+
+function logout(){
+  if( window.confirm( 'Logout?' ) ){
+    var obj = getBusyOverlay( 'viewport', {color:'black', opacity:0.5, text:'loading', style:'text-decoration:blink; font-weight:bold; font-size:12px; color:white;' } );
+    $.ajax({
+      type: 'POST',
+      url: '/slack/logout',
+      data: {},
+      success: function( data ){
+        obj.remove();
+        window.location.href = '/';
+      },
+      error: function(){
+        obj.remove();
+        window.location.href = '/';
+      }
+    });
+  }
+}
+
+function initChannelIds(){
+  $.ajax({
+    type: 'GET',
+    url: '/channels',
+    success: function( result, dataType ){
+      console.log( result );
+      if( result && result.status ){
+        result.channels.forEach( function( channel ){
+          var li = '<li> id="' + channel.id + '", name="' + channel.name + '"</li>';
+          $('#channel_ids').append( opt );
+        });
+      }
+    },
+    error: function( jqXHR, textStatus, errorThrown ){
+      console.log( textStatus + ': ' + errorThrown );
+    }
+  });
+
+  //. スクロール禁止
+  var movefun = function( event ){
+    event.preventDefault();
+  }
+  window.addEventListener( 'touchmove', movefun, { passive: false } );
+}
+
+function resized(){
+  var browserWidth = window.innerWidth;
+  var browserHeight = window.innerHeight;
+  var canvas = document.getElementById( 'mycanvas' );
+  if( canvas && canvas.getContext ){
+    canvas.width = browserWidth * 0.8;
+    canvas.height = browserHeight * 0.6;
+  }
+}
+
+function isAndroid(){
+  return ( navigator.userAgent.indexOf( 'Android' ) > 0 );
+}
+</script>
+</body>
+</html>
